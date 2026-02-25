@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# YOLO / ML – don't push weights, runs, or large data
+*.pt
+*.pth
+*.onnx
+runs/
+wandb/
+
+# Datasets and images (keep in Git LFS or host elsewhere if needed)
+Images/
+Images_FallenTrees/
+Images_ELectricPole/
+Pothole Dataset/
+data/pothole_dataset/
+data/combined_dataset/
+data/*.zip
+
+# Keep only small config and structure in data/
+!data/*.yaml
+!data/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,9 @@
+# Combined: pothole (0) + fallen_tree (1) + electric_pole (2)
+path: D:/Projects/MLModel/data/combined_dataset
+train: images/train
+val: images/val
+names:
+  0: pothole
+  1: fallen_tree
+  2: electric_pole
+nc: 3

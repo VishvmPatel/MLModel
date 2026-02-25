@@ -1,0 +1,12 @@
+# Pothole detection dataset config for YOLOv8
+# Paths are relative to this file; use absolute paths if needed
+
+path: data/pothole_dataset  # dataset root (absolute path set by prepare_dataset.py)
+train: images/train
+val: images/val
+
+# Classes
+names:
+  0: pothole
+
+nc: 1

@@ -1,0 +1,21 @@
+# How to see training progress
+
+**Current run:** Fresh 50-epoch training on GPU (run name: **pothole_gpu**).  
+Weights and logs: **runs/detect/pothole_gpu/** (best.pt, last.pt, results.csv).
+Previous resume failed (CPU checkpoint incompatible with GPU); this run is from scratch on GPU.
+---
+
+## Option 1 – Open the Terminal panel in Cursor
+- Press **Ctrl+`** (backtick, key above Tab), or  
+- Menu: **View → Terminal**
+- If you have several terminals, use the dropdown in the terminal panel to switch to the one running "train.py".
+
+## Option 2 – Open the log file in Cursor
+- Press **Ctrl+P** (Quick Open), type: **terminals** and open the latest file (e.g. **512427.txt** for current run).
+- Or in the file explorer go to: **.cursor/projects/d-Projects-MLModel/terminals/** and open the newest `.txt` file (sort by Date Modified).
+- The log updates while training runs; refresh or scroll to the bottom to see the latest.
+
+## Option 3 – Check the run folder
+- Open: **d:\Projects\MLModel\runs\detect\pothole**
+- **results.csv** – updated each epoch (open in Excel or a text editor).
+- **weights/last.pt** – modified time shows when the last epoch was saved.
