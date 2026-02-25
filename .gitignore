@@ -12,7 +12,6 @@ env/
 *.pt
 *.pth
 *.onnx
-runs/
 wandb/
 
 # Datasets and images (keep in Git LFS or host elsewhere if needed)
