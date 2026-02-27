@@ -7,6 +7,26 @@ Usage: python print_metrics.py
 from pathlib import Path
 from ultralytics import YOLO
 
+
+def _to_scalar(x):
+    """Convert Ultralytics metric values (which may be arrays) to a single float."""
+    if x is None:
+        return None
+    # If it's a numpy/torch array or list, take the mean
+    if hasattr(x, "__len__") and not isinstance(x, (str, bytes)):
+        try:
+            # Prefer .mean() if available
+            if hasattr(x, "mean"):
+                return float(x.mean())
+            # Fallback to first element
+            return float(x[0])
+        except Exception:
+            pass
+    try:
+        return float(x)
+    except Exception:
+        return None
+
 def main():
     weights = Path("runs/detect/combined/weights/best.pt")
     data_yaml = Path("data/combined.yaml")
@@ -30,10 +50,18 @@ def main():
     if hasattr(metrics, "box") and metrics.box is not None:
         box = metrics.box
         lines.append("\n--- Overall (all classes) ---")
-        lines.append(f"  mAP50:        {getattr(box, 'ap50', None) or getattr(box, 'map50', None):.4f}")
-        lines.append(f"  mAP50-95:     {getattr(box, 'ap', None) or getattr(box, 'map', None):.4f}")
-        lines.append(f"  Precision:    {getattr(box, 'p', None) or getattr(box, 'mp', None):.4f}")
-        lines.append(f"  Recall:       {getattr(box, 'r', None) or getattr(box, 'mr', None):.4f}")
+        m50 = _to_scalar(getattr(box, "ap50", None)) or _to_scalar(getattr(box, "map50", None))
+        m5095 = _to_scalar(getattr(box, "ap", None)) or _to_scalar(getattr(box, "map", None))
+        p = _to_scalar(getattr(box, "p", None)) or _to_scalar(getattr(box, "mp", None))
+        r = _to_scalar(getattr(box, "r", None)) or _to_scalar(getattr(box, "mr", None))
+        if m50 is not None:
+            lines.append(f"  mAP50:        {m50:.4f}")
+        if m5095 is not None:
+            lines.append(f"  mAP50-95:     {m5095:.4f}")
+        if p is not None:
+            lines.append(f"  Precision:    {p:.4f}")
+        if r is not None:
+            lines.append(f"  Recall:       {r:.4f}")
     if hasattr(metrics, "fitness") and metrics.fitness is not None:
         lines.append(f"  Fitness:      {metrics.fitness:.4f}")
 
@@ -69,7 +97,8 @@ def main():
     text = "\n".join(lines)
     print(text)
 
-    out_file = Path("runs/detect/combined_metrics.txt")
+    # Save metrics to central results folder
+    out_file = Path("results/combined_metrics.txt")
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(text, encoding="utf-8")
     print(f"\nMetrics saved to: {out_file.resolve()}")

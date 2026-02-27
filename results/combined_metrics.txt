@@ -1,0 +1,29 @@
+============================================================
+COMBINED MODEL PERFORMANCE METRICS
+(pothole, fallen_tree, electric_pole)
+============================================================
+
+--- Overall (all classes) ---
+  mAP50:        0.8387
+  mAP50-95:     0.7740
+  Precision:    0.8291
+  Recall:       0.8009
+  Fitness:      0.7740
+
+--- Per-class metrics ---
+  metrics/precision(B): 0.8291
+  metrics/recall(B): 0.8009
+  metrics/mAP50(B): 0.8387
+  metrics/mAP50-95(B): 0.7740
+  fitness: 0.7740
+  pothole mAP50: 0.5371
+  fallen_tree mAP50: 0.9870
+  electric_pole mAP50: 0.9921
+  pothole Precision: 0.6080
+  fallen_tree Precision: 0.8974
+  electric_pole Precision: 0.9819
+  pothole Recall: 0.4598
+  fallen_tree Recall: 0.9856
+  electric_pole Recall: 0.9575
+
+============================================================
