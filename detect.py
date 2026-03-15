@@ -89,7 +89,7 @@ def detect(
             iou=iou_thres,
             device=device,
             save=save,
-            project=out_path.parent,
+            project=str(out_path.parent),
             name=out_path.name,
             exist_ok=True,
             save_txt=save_txt,
@@ -100,6 +100,13 @@ def detect(
         )
 
     print(f"\nPredictions saved to: {out_path.resolve()}")
+    if save and out_path.exists():
+        images = list(out_path.glob("*.jpg")) + list(out_path.glob("*.png"))
+        if images:
+            for f in sorted(images)[:10]:
+                print(f"  -> {f.resolve()}")
+            if len(images) > 10:
+                print(f"  ... and {len(images) - 10} more")
     print("Detections are outlined with bounding boxes and labels (class + confidence).")
     if max_area is not None:
         print(f"Filtered out boxes larger than {max_area*100:.0f}% of image area.")

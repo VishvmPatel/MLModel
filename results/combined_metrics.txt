@@ -3,6 +3,9 @@ COMBINED MODEL PERFORMANCE METRICS
 (pothole, fallen_tree, electric_pole)
 ============================================================
 
+  *** MODEL ACCURACY (mAP50-95): 77.4% ***
+
+
 --- Overall (all classes) ---
   mAP50:        0.8387
   mAP50-95:     0.7740

@@ -10,6 +10,7 @@ import base64
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from ultralytics import YOLO
 
@@ -138,6 +139,16 @@ def build_html_report(
         "<h1>Combined model (pothole + fallen_tree + electric_pole) – performance report</h1>",
     ]
 
+    # Exact model accuracy (primary metric: mAP50-95) as percentage
+    accuracy_pct = None
+    if metrics and metrics.get("mAP50-95") is not None:
+        accuracy_pct = round(float(metrics["mAP50-95"]) * 100, 2)
+        html_parts.append(
+            f"<p class='metric' style='font-size:2rem; margin:1.5rem 0;'>"
+            f"<strong>Model accuracy (mAP50-95): {accuracy_pct}%</strong></p>"
+        )
+        (report_dir / "accuracy_percent.txt").write_text(f"{accuracy_pct}", encoding="utf-8")
+
     # Metrics summary table
     html_parts.append("<h2>Validation metrics</h2>")
     if metrics:
@@ -151,20 +162,32 @@ def build_html_report(
     else:
         html_parts.append("<p>Run validation to see metrics.</p>")
 
-    # Validation plots (confusion matrix, F1, P, R, PR, results)
+    # Validation plots (confusion matrix, F1, P, R, PR, results; Ultralytics may use Box* prefix)
     html_parts.append("<h2>Validation plots</h2><div class='grid'>")
-    for name in ["confusion_matrix.png", "F1_curve.png", "P_curve.png", "R_curve.png", "PR_curve.png", "results.png"]:
+    curve_names = [
+        ("confusion_matrix.png", "Confusion matrix"),
+        ("confusion_matrix_normalized.png", "Confusion matrix (normalized)"),
+        ("BoxF1_curve.png", "F1 curve"),
+        ("BoxP_curve.png", "Precision curve"),
+        ("BoxR_curve.png", "Recall curve"),
+        ("BoxPR_curve.png", "Precision-Recall curve"),
+        ("results.png", "Training results"),
+    ]
+    for name, title in curve_names:
         path = val_plots_dir / name
+        if not path.exists() and name.startswith("Box"):
+            path = val_plots_dir / name.replace("Box", "", 1)
         if path.exists():
-            dest = report_dir / name
+            dest = report_dir / path.name
             if path.resolve() != dest.resolve():
                 shutil.copy(path, dest)
             uri = image_to_data_uri(path)
             if uri:
                 html_parts.append(
-                    f"<div class='card'><h3>{name}</h3><img src='{uri}' alt='{name}' style='max-width:100%'/></div>"
+                    f"<div class='card'><h3>{title}</h3><img src='{uri}' alt='{title}' style='max-width:100%'/></div>"
                 )
     html_parts.append("</div>")
+    html_parts.append("<p style='color:#8ecae6; margin-top:0.5rem;'>Best value on each curve is at its peak. Training curves below show the best epoch marked with a red dot and dashed line.</p>")
 
     # Training run artifacts (labels, batch samples, training curves)
     if run_dir and run_dir.exists():
@@ -200,17 +223,21 @@ def build_html_report(
                 )
                 html_parts.append(df.to_string())
                 html_parts.append("</pre>")
-                # Plot training curves if matplotlib available
+                # Plot training curves with best value marked on each
                 if HAS_MPL and len(df) > 0:
                     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
                     x = df.get("epoch", range(len(df)))
+                    if "epoch" not in df.columns:
+                        df = df.copy()
+                        df["epoch"] = list(range(len(df)))
+                    x_vals = df["epoch"].values
                     col_tries = [
-                        ("train/box_loss", "Box loss"),
-                        ("train/cls_loss", "Class loss"),
-                        ("metrics/mAP50(B)", "mAP50"),
-                        ("metrics/mAP50-95(B)", "mAP50-95"),
+                        ("train/box_loss", "Box loss", "min"),
+                        ("train/cls_loss", "Class loss", "min"),
+                        ("metrics/mAP50(B)", "mAP50", "max"),
+                        ("metrics/mAP50-95(B)", "mAP50-95", "max"),
                     ]
-                    for idx, (col, title) in enumerate(col_tries):
+                    for idx, (col, title, best_mode) in enumerate(col_tries):
                         ax = axes[idx // 2, idx % 2]
                         found = (
                             col
@@ -226,9 +253,29 @@ def build_html_report(
                             )
                         )
                         if found is not None:
-                            ax.plot(x, df[found], "b-")
+                            y_vals = df[found].values.astype(float)
+                            ax.plot(x_vals, y_vals, "b-", label="Value")
+                            # Mark best: min for loss, max for metric
+                            if best_mode == "min":
+                                best_idx = int(np.nanargmin(y_vals))
+                            else:
+                                best_idx = int(np.nanargmax(y_vals))
+                            best_epoch = x_vals[best_idx]
+                            best_val = y_vals[best_idx]
+                            ax.scatter(
+                                [best_epoch],
+                                [best_val],
+                                color="red",
+                                s=120,
+                                zorder=5,
+                                edgecolors="white",
+                                linewidths=2,
+                                label=f"Best (epoch {best_epoch})",
+                            )
+                            ax.axvline(x=best_epoch, color="red", linestyle="--", alpha=0.5)
                         ax.set_title(title)
                         ax.set_xlabel("Epoch")
+                        ax.legend(loc="best", fontsize=8)
                     plt.tight_layout()
                     curve_path = report_dir / "training_curves.png"
                     plt.savefig(curve_path, dpi=150, bbox_inches="tight")

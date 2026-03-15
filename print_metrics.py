@@ -94,14 +94,30 @@ def main():
 
     lines.append("\n" + "=" * 60)
 
+    # Exact accuracy as percentage (primary metric: mAP50-95)
+    accuracy_pct = None
+    if hasattr(metrics, "box") and metrics.box is not None:
+        m5095 = _to_scalar(getattr(metrics.box, "ap", None)) or _to_scalar(getattr(metrics.box, "map", None))
+        if m5095 is not None:
+            accuracy_pct = round(m5095 * 100, 2)
+            lines.insert(4, f"\n  *** MODEL ACCURACY (mAP50-95): {accuracy_pct}% ***\n")
+
     text = "\n".join(lines)
     print(text)
 
     # Save metrics to central results folder
-    out_file = Path("results/combined_metrics.txt")
-    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_dir = Path("results")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / "combined_metrics.txt"
     out_file.write_text(text, encoding="utf-8")
     print(f"\nMetrics saved to: {out_file.resolve()}")
+
+    # Save single accuracy percentage for easy reference
+    if accuracy_pct is not None:
+        acc_file = out_dir / "combined_report" / "accuracy_percent.txt"
+        acc_file.parent.mkdir(parents=True, exist_ok=True)
+        acc_file.write_text(f"{accuracy_pct}", encoding="utf-8")
+        print(f"Accuracy (mAP50-95): {accuracy_pct}% -> {acc_file.resolve()}")
 
 
 if __name__ == "__main__":
